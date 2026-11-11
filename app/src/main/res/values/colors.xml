@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="autonav_background">#FF0D1014</color>
+    <color name="autonav_surface">#FF141920</color>
+    <color name="autonav_surface_elevated">#FF1B222C</color>
+    <color name="autonav_border">#FF26303D</color>
+    <color name="autonav_accent">#FF4B8BBE</color>
+    <color name="autonav_text_primary">#FFECEFF4</color>
+    <color name="autonav_text_secondary">#FF94A3B8</color>
+</resources>

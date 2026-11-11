@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AutoNav</string>
+    <string name="header_brand_title">AUTONAV</string>
+    <string name="header_brand_subtitle">STANDALONE INFOTAINMENT SYSTEM</string>
+    <string name="header_settings_button">Settings</string>
+    <string name="search_placeholder">Enter destination or address (Pending search integration)…</string>
+    <string name="search_clear_description">Clear destination query</string>
+    <string name="search_submit_label">Search</string>
+    <string name="map_placeholder_badge">MAP ENGINE PENDING</string>
+    <string name="map_placeholder_title">Map Viewport — Integration Pending</string>
+    <string name="map_placeholder_description">Google Maps SDK, live GPS telemetry, and route rendering are scheduled for subsequent development milestones. No simulated coordinates or speed data are active.</string>
+    <string name="status_gps_label">GPS status</string>
+    <string name="status_gps_not_connected">Not connected</string>
+    <string name="status_navigation_label">Navigation status</string>
+    <string name="status_navigation_inactive">Inactive</string>
+    <string name="status_app_label">Application status</string>
+    <string name="status_app_ready">Ready</string>
+    <string name="settings_dialog_title">System Configuration (Day 1 Foundation)</string>
+    <string name="settings_dialog_message">Hardware telemetry, map rendering preferences, voice guidance settings, and offline destination storage are not yet implemented in Milestone 1.</string>
+    <string name="settings_dialog_close">Close</string>
+</resources>

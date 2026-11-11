@@ -1,0 +1,9 @@
+## local.properties.example
+## Copy this file to `local.properties` and configure your local environment paths.
+## DO NOT commit `local.properties` to version control.
+
+# Path to your local Android SDK installation:
+# sdk.dir=C\:\\Users\\<username>\\AppData\\Local\\Android\\Sdk
+
+# Future Milestone Configuration (Milestone 2+):
+# MAPS_API_KEY=your_google_maps_api_key_here

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.AutoNav" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">@color/autonav_background</item>
+        <item name="android:navigationBarColor">@color/autonav_background</item>
+        <item name="android:windowBackground">@color/autonav_background</item>
+    </style>
+</resources>
