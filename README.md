@@ -133,15 +133,17 @@ Detailed architectural diagrams and data-flow documentation are available in [`d
 
 ---
 
-## 7. Current Development Status (Milestone 2 Completed)
+## 7. Current Development Status (Milestone 3 Completed)
 
 | Subsystem / Component | Status | Notes |
 | :--- | :--- | :--- |
 | **Gradle & Version Catalog** | Completed | Kotlin `2.0.21`, AGP `8.7.3`, Play Services Location `21.3.0`, Maps Compose `6.4.1` |
-| **MVVM Architecture (`data`, `viewmodel`, `ui`)** | Completed | `SystemStatusRepository`, `HomeViewModel`, `HomeUiState` |
+| **MVVM Architecture (`data`, `viewmodel`, `ui`)** | Completed | `SystemStatusRepository`, `DestinationRepository`, `HomeViewModel`, `HomeUiState` |
 | **Hardware GPS Location Telemetry** | Completed | `AndroidGpsLocationClient` tracking GNSS fixes, bearing, and speed via `LocationManager` |
-| **Google Maps Viewport & Dark Styling** | Completed | `AutoNavMapView` with `AutomotiveMapTheme`, vehicle reticle, and re-center controls |
+| **Google Maps Viewport & Dark Styling** | Completed | `AutoNavMapView` with `AutomotiveMapTheme`, vehicle reticle, destination pins, and follow controls |
 | **Speedometer & System Telemetry** | Completed | Truthful telemetry reporting GPS status (with sat count), speed (`-- km/h` when disconnected) |
-| **Unit Test Suite (`app/src/test`)** | Completed | 21/21 unit tests passing across Models, Utilities, Repositories, and ViewModels |
+| **Destination Search & Geocoding** | Completed | `DefaultDestinationRepository` with multi-token ranking, `SearchResultsOverlay`, and `DestinationCard` |
+| **Unit Test Suite (`app/src/test`)** | Completed | 29/29 unit tests passing across Models, Utilities, Repositories, and ViewModels |
+| **Turn-by-Turn & Voice Navigation** | Pending | Scheduled for Milestones 4 & 5 |
 | **Destination Search & Geocoding** | Pending | UI input complete; geocoding scheduled for Milestone 3 |
 | **Turn-by-Turn & Voice Navigation** | Pending | Scheduled for Milestones 4 & 5 |

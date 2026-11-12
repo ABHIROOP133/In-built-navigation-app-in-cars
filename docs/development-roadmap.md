@@ -25,11 +25,15 @@ This roadmap defines the engineering milestones, module dependencies, implementa
   - Connect `GpsLocationClient` to `SystemStatusRepository` so `GPS status` updates dynamically (`Not connected` -> `Searching` -> `Connected`) and speedometer displays accurate ground speed.
   - Unit tests covering `LocationFix` geometry, `SpeedFormatter`, repository updates, and ViewModel state transitions (21 tests passing).
 
-### Milestone 3: Destination Search & Geocoding (Day 4)
+### Milestone 3: Destination Search & Geocoding (Day 3 — Completed)
 - **Scope**:
-  - Implement `DestinationRepository` in `com.autonav.data.repository` to resolve text queries entered in `DestinationSearchBar` into geographic coordinates and place metadata.
-  - Display selectable search results in an automotive-friendly overlay list with large touch targets (`>= 56dp` row height).
-  - Allow selecting a search result to pin the destination marker on the map camera and preview the target location.
+  - Implement `Destination` domain model and `DestinationCategory` enums with straight-line distance formatting (`formatDistance`).
+  - Implement `DestinationRepository` and `DefaultDestinationRepository` in `com.autonav.data.repository` resolving text queries into coordinates, ranking by text match relevance and proximity to current vehicle location (`LocationFix.distanceTo`).
+  - Display search results in [`SearchResultsOverlay.kt`](file:///c:/in%20built%20navigation%20app%20in%20cars/app/src/main/java/com/autonav/ui/components/SearchResultsOverlay.kt) with touch targets $\ge 64dp$, category icons, and distance badges.
+  - Build floating [`DestinationCard.kt`](file:///c:/in%20built%20navigation%20app%20in%20cars/app/src/main/java/com/autonav/ui/components/DestinationCard.kt) displaying selected waypoint details, straight-line distance, and route calculation actions.
+  - Update `AutoNavMapView` to animate camera to selected destination and render custom target pin markers.
+  - Wire search state, results overlay, and waypoint clearance in `HomeViewModel` and `HomeUiState`.
+  - Comprehensive unit test suite (29 tests passing).
 
 ### Milestone 4: Route Calculation, Turn-by-Turn Guidance & Automatic Rerouting (Day 5–7)
 - **Scope**:

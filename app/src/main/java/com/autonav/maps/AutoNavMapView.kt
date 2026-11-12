@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.autonav.data.model.Destination
 import com.autonav.data.model.GpsConnectionStatus
 import com.autonav.data.model.LocationFix
 import com.autonav.ui.theme.CharcoalBackground
@@ -63,6 +64,7 @@ import com.google.maps.android.compose.rememberMarkerState
 @Composable
 fun AutoNavMapView(
     currentLocation: LocationFix?,
+    selectedDestination: Destination? = null,
     gpsStatus: GpsConnectionStatus,
     hasLocationPermission: Boolean,
     hasValidApiKey: Boolean,
@@ -93,8 +95,28 @@ fun AutoNavMapView(
                 currentLocation?.let { LatLng(it.latitude, it.longitude) } ?: defaultCoordinate
             }
 
+            val destinationLatLng = remember(selectedDestination) {
+                selectedDestination?.let { LatLng(it.latitude, it.longitude) }
+            }
+
             val cameraPositionState = rememberCameraPositionState {
                 position = CameraPosition.fromLatLngZoom(carLatLng, 16f)
+            }
+
+            // Animate to destination when one is actively selected
+            LaunchedEffect(destinationLatLng) {
+                if (destinationLatLng != null) {
+                    cameraPositionState.animate(
+                        CameraUpdateFactory.newCameraPosition(
+                            CameraPosition.Builder()
+                                .target(destinationLatLng)
+                                .zoom(15.5f)
+                                .tilt(35f)
+                                .build()
+                        ),
+                        1000
+                    )
+                }
             }
 
             // Detect user camera manipulation to exit follow mode
@@ -106,7 +128,7 @@ fun AutoNavMapView(
 
             // Smoothly track vehicle when following
             LaunchedEffect(carLatLng, isFollowingVehicle) {
-                if (isFollowingVehicle && currentLocation != null) {
+                if (isFollowingVehicle && currentLocation != null && selectedDestination == null) {
                     cameraPositionState.animate(
                         CameraUpdateFactory.newCameraPosition(
                             CameraPosition.Builder()
@@ -161,6 +183,21 @@ fun AutoNavMapView(
                         VehicleLocationReticle(bearing = currentLocation.bearing)
                     }
                 }
+
+                if (destinationLatLng != null) {
+                    val destMarkerState = rememberMarkerState(position = destinationLatLng)
+                    LaunchedEffect(destinationLatLng) {
+                        destMarkerState.position = destinationLatLng
+                    }
+
+                    MarkerComposable(
+                        state = destMarkerState,
+                        title = selectedDestination?.title ?: "Destination",
+                        anchor = Offset(0.5f, 1.0f)
+                    ) {
+                        DestinationPinMarker(title = selectedDestination?.title ?: "Destination")
+                    }
+                }
             }
 
             // Floating "Re-center on Vehicle" touch button
@@ -183,6 +220,44 @@ fun AutoNavMapView(
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * Automotive destination waypoint marker pin rendered directly on the map viewport.
+ */
+@Composable
+fun DestinationPinMarker(
+    title: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.testTag("destination_pin_marker"),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .background(Color(0xFFD97706), CircleShape)
+                .border(2.dp, TextPrimary, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.LocationOn,
+                contentDescription = title,
+                tint = TextPrimary,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Canvas(modifier = Modifier.size(10.dp, 8.dp)) {
+            val path = Path().apply {
+                moveTo(0f, 0f)
+                lineTo(size.width, 0f)
+                lineTo(size.width / 2f, size.height)
+                close()
+            }
+            drawPath(path = path, color = Color(0xFFD97706))
         }
     }
 }

@@ -78,11 +78,11 @@ To ensure reliability in an automotive environment where configuration changes, 
 | :--- | :--- | :--- |
 | `com.autonav` | `MainActivity.kt` | Application activity entry point; configures edge-to-edge window insets, connects hardware GNSS lifecycle, and mounts `AutoNavTheme` + `HomeScreen`. |
 | `com.autonav.ui.screens` | `HomeScreen.kt` | Top-level screen layout coordinator; computes responsive breakpoints via `BoxWithConstraints`, handles runtime location permission requests, and coordinates header, search, live map viewport, and telemetry bar. |
-| `com.autonav.ui.components` | `TopHeaderBar.kt`, `DestinationSearchBar.kt`, `MapPlaceholderView.kt`, `BottomStatusBar.kt` | Modular, self-contained automotive UI controls with minimum `48dp`–`56dp` touch targets, speedometer telemetry display, and `testTag` hooks. |
+| `com.autonav.ui.components` | `TopHeaderBar.kt`, `DestinationSearchBar.kt`, `SearchResultsOverlay.kt`, `DestinationCard.kt`, `MapPlaceholderView.kt`, `BottomStatusBar.kt` | Modular, self-contained automotive UI controls with minimum `48dp`–`64dp` touch targets, speedometer telemetry display, search results overlay, waypoint cards, and `testTag` hooks. |
 | `com.autonav.ui.theme` | `Color.kt`, `Type.kt`, `Theme.kt` | Defines the low-glare dark charcoal color palette, high-contrast typography scale, and `AutoNavTheme`. |
-| `com.autonav.viewmodel` | `HomeUiState.kt`, `HomeViewModel.kt` | State holder and intent processor for the Home Screen, tracking permissions, vehicle follow state, and telemetry. |
-| `com.autonav.data.model` | `LocationFix.kt`, `SystemStatus.kt` | Domain models representing geographic coordinates, bearing, vehicle ground speed, and system status snapshots. |
-| `com.autonav.data.repository` | `SystemStatusRepository.kt` | Repository interface and implementation streaming GPS telemetry, satellite counts, and speed to the UI layer. |
+| `com.autonav.viewmodel` | `HomeUiState.kt`, `HomeViewModel.kt` | State holder and intent processor for the Home Screen, tracking permissions, vehicle follow state, search queries, results overlay, and telemetry. |
+| `com.autonav.data.model` | `Destination.kt`, `LocationFix.kt`, `SystemStatus.kt` | Domain models representing destinations, categories, geographic coordinates, bearing, vehicle ground speed, and system status snapshots. |
+| `com.autonav.data.repository` | `DestinationRepository.kt`, `SystemStatusRepository.kt` | Repositories streaming GPS telemetry, satellite counts, speed, and geocoded destination queries to the UI layer. |
 | `com.autonav.location` | `GpsLocationClient.kt`, `AndroidGpsLocationClient.kt` | Hardware GNSS sensor client interfacing with Android `LocationManager` and `GnssStatus` without Play Services dependency. |
 | `com.autonav.maps` | `AutomotiveMapTheme.kt`, `AutoNavMapView.kt` | Google Maps Compose viewport, dark automotive styling JSON, vehicle heading reticle, and camera follow/re-center controls. |
 | `com.autonav.navigation` | *(Reserved — Milestone 4)* | Route computation, polyline decoding, maneuver step progression, and off-route detection/rerouting engine. |

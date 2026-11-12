@@ -1,8 +1,11 @@
 package com.autonav.viewmodel
 
 import androidx.lifecycle.ViewModel
+import com.autonav.data.model.Destination
 import com.autonav.data.model.LocationFix
+import com.autonav.data.repository.DefaultDestinationRepository
 import com.autonav.data.repository.DefaultSystemStatusRepository
+import com.autonav.data.repository.DestinationRepository
 import com.autonav.data.repository.SystemStatusRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -15,9 +18,11 @@ import kotlinx.coroutines.launch
 
 /**
  * ViewModel managing state and user interactions for the AutoNav Home Screen.
+ * Coordinates system telemetry, geocoding search, and map destination selection.
  */
 class HomeViewModel(
     private val statusRepository: SystemStatusRepository = DefaultSystemStatusRepository(),
+    private val destinationRepository: DestinationRepository = DefaultDestinationRepository(),
     scope: CoroutineScope? = null
 ) : ViewModel() {
 
@@ -77,26 +82,88 @@ class HomeViewModel(
         _uiState.update { current ->
             current.copy(
                 searchQuery = sanitizedQuery,
-                pendingFeatureMessage = if (sanitizedQuery.isBlank()) null else current.pendingFeatureMessage
+                pendingFeatureMessage = null
             )
+        }
+
+        if (sanitizedQuery.trim().length >= 2) {
+            viewModelScope.launch {
+                val results = destinationRepository.searchDestinations(
+                    query = sanitizedQuery,
+                    currentFix = _uiState.value.lastKnownLocation
+                )
+                _uiState.update { current ->
+                    current.copy(
+                        searchResults = results,
+                        isSearchOverlayVisible = results.isNotEmpty()
+                    )
+                }
+            }
+        } else if (sanitizedQuery.isBlank()) {
+            _uiState.update { current ->
+                current.copy(
+                    searchResults = emptyList(),
+                    isSearchOverlayVisible = false
+                )
+            }
         }
     }
 
     fun onSearchSubmitted() {
         val trimmedQuery = _uiState.value.searchQuery.trim()
         if (trimmedQuery.isEmpty()) {
-            _uiState.update { current ->
-                current.copy(
-                    pendingFeatureMessage = "Enter a destination query. Geocoding and route search are scheduled for Milestone 3."
+            viewModelScope.launch {
+                val suggestions = destinationRepository.getSuggestedDestinations(
+                    currentFix = _uiState.value.lastKnownLocation
                 )
+                _uiState.update { current ->
+                    current.copy(
+                        searchResults = suggestions,
+                        isSearchOverlayVisible = suggestions.isNotEmpty(),
+                        pendingFeatureMessage = if (suggestions.isEmpty()) "No suggested destinations available." else null
+                    )
+                }
             }
             return
         }
 
+        _uiState.update { it.copy(isSearching = true) }
+        viewModelScope.launch {
+            val results = destinationRepository.searchDestinations(
+                query = trimmedQuery,
+                currentFix = _uiState.value.lastKnownLocation
+            )
+            _uiState.update { current ->
+                current.copy(
+                    searchResults = results,
+                    isSearching = false,
+                    isSearchOverlayVisible = true,
+                    pendingFeatureMessage = if (results.isEmpty()) "No destinations found for \"$trimmedQuery\"." else null
+                )
+            }
+        }
+    }
+
+    fun onDestinationSelected(destination: Destination) {
         _uiState.update { current ->
             current.copy(
-                searchQuery = trimmedQuery,
-                pendingFeatureMessage = "Destination search for \"$trimmedQuery\" is not yet active (Pending Milestone 3 geocoding integration)."
+                selectedDestination = destination,
+                searchQuery = destination.title,
+                isSearchOverlayVisible = false,
+                isFollowingVehicle = false,
+                pendingFeatureMessage = null
+            )
+        }
+    }
+
+    fun onClearDestination() {
+        _uiState.update { current ->
+            current.copy(
+                selectedDestination = null,
+                searchQuery = "",
+                isFollowingVehicle = true,
+                isSearchOverlayVisible = false,
+                pendingFeatureMessage = null
             )
         }
     }
@@ -105,8 +172,16 @@ class HomeViewModel(
         _uiState.update { current ->
             current.copy(
                 searchQuery = "",
+                searchResults = emptyList(),
+                isSearchOverlayVisible = false,
                 pendingFeatureMessage = null
             )
+        }
+    }
+
+    fun onDismissSearchOverlay() {
+        _uiState.update { current ->
+            current.copy(isSearchOverlayVisible = false)
         }
     }
 

@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -32,9 +34,12 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.autonav.BuildConfig
 import com.autonav.R
+import com.autonav.data.model.Destination
 import com.autonav.maps.AutoNavMapView
 import com.autonav.ui.components.BottomStatusBar
+import com.autonav.ui.components.DestinationCard
 import com.autonav.ui.components.DestinationSearchBar
+import com.autonav.ui.components.SearchResultsOverlay
 import com.autonav.ui.components.TopHeaderBar
 import com.autonav.ui.theme.AutoNavTheme
 import com.autonav.ui.theme.CharcoalBackground
@@ -48,7 +53,7 @@ import com.autonav.viewmodel.HomeViewModel
 
 /**
  * Stateful entry point for the AutoNav Home Screen connected to [HomeViewModel].
- * Handles runtime location permission handshakes and Maps API key validation.
+ * Handles runtime location permission handshakes, Maps API key validation, and destination search.
  */
 @Composable
 fun HomeScreen(
@@ -100,6 +105,12 @@ fun HomeScreen(
         onSearchQueryChange = viewModel::onSearchQueryChanged,
         onSearchSubmit = viewModel::onSearchSubmitted,
         onClearSearch = viewModel::onClearSearch,
+        onSelectDestination = viewModel::onDestinationSelected,
+        onClearDestination = viewModel::onClearDestination,
+        onDismissSearchOverlay = viewModel::onDismissSearchOverlay,
+        onStartRoute = {
+            // Prepared for Milestone 4 (Route Calculation & Turn-by-Turn Engine)
+        },
         onDismissPendingNotice = viewModel::onDismissPendingNotice,
         onOpenSettings = viewModel::onOpenSettings,
         onDismissSettings = viewModel::onDismissSettings,
@@ -109,10 +120,6 @@ fun HomeScreen(
 
 /**
  * Stateless, responsive Home Screen composable designed for automotive touchscreens.
- *
- * Adapts spacing and layout posture across compact 7-inch displays (800x480),
- * standard 10–12 inch head units (1280x720), ultra-wide cockpit displays (1920x720),
- * and portrait tablet orientations without introducing vertical scrolling.
  */
 @Composable
 fun HomeScreenContent(
@@ -123,6 +130,10 @@ fun HomeScreenContent(
     onSearchQueryChange: (String) -> Unit,
     onSearchSubmit: () -> Unit,
     onClearSearch: () -> Unit,
+    onSelectDestination: (Destination) -> Unit,
+    onClearDestination: () -> Unit,
+    onDismissSearchOverlay: () -> Unit,
+    onStartRoute: (Destination) -> Unit,
     onDismissPendingNotice: () -> Unit,
     onOpenSettings: () -> Unit,
     onDismissSettings: () -> Unit,
@@ -171,20 +182,50 @@ fun HomeScreenContent(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // B. Main Automotive Map Viewport
-                    AutoNavMapView(
-                        currentLocation = uiState.lastKnownLocation,
-                        gpsStatus = uiState.systemStatus.gpsStatus,
-                        hasLocationPermission = uiState.hasLocationPermission,
-                        hasValidApiKey = uiState.hasValidApiKey,
-                        isFollowingVehicle = uiState.isFollowingVehicle,
-                        onRequestPermission = onRequestPermission,
-                        onRecenterClick = onRecenterClick,
-                        onUserPanMap = onUserPanMap,
+                    // B. Main Automotive Map Viewport with Floating Overlays
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f)
-                    )
+                    ) {
+                        AutoNavMapView(
+                            currentLocation = uiState.lastKnownLocation,
+                            selectedDestination = uiState.selectedDestination,
+                            gpsStatus = uiState.systemStatus.gpsStatus,
+                            hasLocationPermission = uiState.hasLocationPermission,
+                            hasValidApiKey = uiState.hasValidApiKey,
+                            isFollowingVehicle = uiState.isFollowingVehicle,
+                            onRequestPermission = onRequestPermission,
+                            onRecenterClick = onRecenterClick,
+                            onUserPanMap = onUserPanMap,
+                            modifier = Modifier.fillMaxSize()
+                        )
+
+                        // Floating Search Results Overlay
+                        if (uiState.isSearchOverlayVisible && uiState.searchResults.isNotEmpty()) {
+                            SearchResultsOverlay(
+                                results = uiState.searchResults,
+                                onSelectDestination = onSelectDestination,
+                                onDismiss = onDismissSearchOverlay,
+                                modifier = Modifier
+                                    .align(Alignment.TopCenter)
+                                    .padding(horizontal = 8.dp, vertical = 6.dp)
+                            )
+                        }
+
+                        // Floating Selected Destination Preview Card
+                        if (uiState.selectedDestination != null && !uiState.isSearchOverlayVisible) {
+                            DestinationCard(
+                                destination = uiState.selectedDestination,
+                                onStartRoute = onStartRoute,
+                                onClearDestination = onClearDestination,
+                                modifier = Modifier
+                                    .align(Alignment.BottomStart)
+                                    .padding(16.dp)
+                                    .fillMaxWidth(if (isCompactWidth) 1f else 0.55f)
+                            )
+                        }
+                    }
 
                     // D. Bottom System Telemetry Area (GPS status, Vehicle Speed, Nav status, App status)
                     BottomStatusBar(
@@ -256,54 +297,10 @@ private fun HomeScreenStandardAutomotivePreview() {
             onSearchQueryChange = {},
             onSearchSubmit = {},
             onClearSearch = {},
-            onDismissPendingNotice = {},
-            onOpenSettings = {},
-            onDismissSettings = {}
-        )
-    }
-}
-
-@Preview(
-    name = "Automotive Compact 7-inch Display (800x480)",
-    widthDp = 800,
-    heightDp = 480,
-    showBackground = true
-)
-@Composable
-private fun HomeScreenCompactAutomotivePreview() {
-    AutoNavTheme {
-        HomeScreenContent(
-            uiState = HomeUiState(),
-            onRequestPermission = {},
-            onRecenterClick = {},
-            onUserPanMap = {},
-            onSearchQueryChange = {},
-            onSearchSubmit = {},
-            onClearSearch = {},
-            onDismissPendingNotice = {},
-            onOpenSettings = {},
-            onDismissSettings = {}
-        )
-    }
-}
-
-@Preview(
-    name = "Automotive Ultra-Wide Cockpit (1920x720)",
-    widthDp = 1920,
-    heightDp = 720,
-    showBackground = true
-)
-@Composable
-private fun HomeScreenUltraWideAutomotivePreview() {
-    AutoNavTheme {
-        HomeScreenContent(
-            uiState = HomeUiState(),
-            onRequestPermission = {},
-            onRecenterClick = {},
-            onUserPanMap = {},
-            onSearchQueryChange = {},
-            onSearchSubmit = {},
-            onClearSearch = {},
+            onSelectDestination = {},
+            onClearDestination = {},
+            onDismissSearchOverlay = {},
+            onStartRoute = {},
             onDismissPendingNotice = {},
             onOpenSettings = {},
             onDismissSettings = {}

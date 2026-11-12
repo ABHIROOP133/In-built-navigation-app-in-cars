@@ -1,6 +1,8 @@
 package com.autonav.viewmodel
 
 import com.autonav.data.model.ApplicationStatus
+import com.autonav.data.model.Destination
+import com.autonav.data.model.DestinationCategory
 import com.autonav.data.model.GpsConnectionStatus
 import com.autonav.data.model.LocationFix
 import com.autonav.data.model.NavigationStatus
@@ -27,6 +29,9 @@ class HomeViewModelTest {
         assertFalse(state.hasLocationPermission)
         assertFalse(state.hasValidApiKey)
         assertTrue(state.isFollowingVehicle)
+        assertTrue(state.searchResults.isEmpty())
+        assertFalse(state.isSearchOverlayVisible)
+        assertNull(state.selectedDestination)
     }
 
     @Test
@@ -85,51 +90,95 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `onSearchQueryChanged updates query and strips newline characters`() {
+    fun `onSearchQueryChanged with 2 or more characters triggers search and displays overlay`() {
         val viewModel = HomeViewModel()
 
-        viewModel.onSearchQueryChanged("Central Railway Station\n")
+        viewModel.onSearchQueryChanged("Airport")
 
-        assertEquals("Central Railway Station", viewModel.uiState.value.searchQuery)
+        val state = viewModel.uiState.value
+        assertEquals("Airport", state.searchQuery)
+        assertTrue(state.searchResults.isNotEmpty())
+        assertTrue(state.isSearchOverlayVisible)
+        assertTrue(state.searchResults.any { it.title.contains("Airport") })
     }
 
     @Test
-    fun `onSearchSubmitted with valid destination sets explicit pending milestone message`() {
+    fun `onSearchSubmitted with query populates results and displays overlay`() {
         val viewModel = HomeViewModel()
-        viewModel.onSearchQueryChanged(" Kempegowda International Airport ")
+        viewModel.onSearchQueryChanged("Electronic")
 
         viewModel.onSearchSubmitted()
 
         val state = viewModel.uiState.value
-        assertEquals("Kempegowda International Airport", state.searchQuery)
-        assertNotNull(state.pendingFeatureMessage)
-        assertTrue(state.pendingFeatureMessage!!.contains("Kempegowda International Airport"))
-        assertTrue(state.pendingFeatureMessage.contains("Pending Milestone 3"))
+        assertTrue(state.searchResults.isNotEmpty())
+        assertTrue(state.isSearchOverlayVisible)
     }
 
     @Test
-    fun `onSearchSubmitted with blank query displays guidance notice`() {
+    fun `onSearchSubmitted with blank query loads suggested destinations`() {
         val viewModel = HomeViewModel()
         viewModel.onSearchQueryChanged("   ")
 
         viewModel.onSearchSubmitted()
 
         val state = viewModel.uiState.value
-        assertNotNull(state.pendingFeatureMessage)
-        assertTrue(state.pendingFeatureMessage!!.contains("Milestone 3"))
+        assertTrue(state.searchResults.isNotEmpty())
+        assertTrue(state.isSearchOverlayVisible)
     }
 
     @Test
-    fun `onClearSearch resets query and clears pending notice`() {
+    fun `onDestinationSelected selects waypoint, sets title, hides overlay, and unfocuses vehicle follow`() {
         val viewModel = HomeViewModel()
-        viewModel.onSearchQueryChanged("Tech Park")
+        val dest = Destination(
+            id = "test_dest",
+            title = "Kempegowda International Airport",
+            subtitle = "Devanahalli",
+            latitude = 13.1986,
+            longitude = 77.7066,
+            category = DestinationCategory.AIRPORT
+        )
+
+        viewModel.onDestinationSelected(dest)
+
+        val state = viewModel.uiState.value
+        assertEquals(dest, state.selectedDestination)
+        assertEquals("Kempegowda International Airport", state.searchQuery)
+        assertFalse(state.isSearchOverlayVisible)
+        assertFalse(state.isFollowingVehicle)
+    }
+
+    @Test
+    fun `onClearDestination resets selected waypoint, clears search, and resumes vehicle follow`() {
+        val viewModel = HomeViewModel()
+        val dest = Destination(
+            id = "test_dest",
+            title = "Station",
+            subtitle = "City Centre",
+            latitude = 12.0,
+            longitude = 77.0
+        )
+        viewModel.onDestinationSelected(dest)
+
+        viewModel.onClearDestination()
+
+        val state = viewModel.uiState.value
+        assertNull(state.selectedDestination)
+        assertEquals("", state.searchQuery)
+        assertTrue(state.isFollowingVehicle)
+    }
+
+    @Test
+    fun `onClearSearch resets query and closes results overlay`() {
+        val viewModel = HomeViewModel()
+        viewModel.onSearchQueryChanged("Railway")
         viewModel.onSearchSubmitted()
 
         viewModel.onClearSearch()
 
         val state = viewModel.uiState.value
         assertEquals("", state.searchQuery)
-        assertNull(state.pendingFeatureMessage)
+        assertTrue(state.searchResults.isEmpty())
+        assertFalse(state.isSearchOverlayVisible)
     }
 
     @Test
