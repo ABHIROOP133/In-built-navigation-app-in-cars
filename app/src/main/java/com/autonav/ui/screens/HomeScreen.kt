@@ -1,5 +1,9 @@
 package com.autonav.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -15,18 +19,22 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.autonav.BuildConfig
 import com.autonav.R
+import com.autonav.maps.AutoNavMapView
 import com.autonav.ui.components.BottomStatusBar
 import com.autonav.ui.components.DestinationSearchBar
-import com.autonav.ui.components.MapPlaceholderView
 import com.autonav.ui.components.TopHeaderBar
 import com.autonav.ui.theme.AutoNavTheme
 import com.autonav.ui.theme.CharcoalBackground
@@ -40,16 +48,55 @@ import com.autonav.viewmodel.HomeViewModel
 
 /**
  * Stateful entry point for the AutoNav Home Screen connected to [HomeViewModel].
+ * Handles runtime location permission handshakes and Maps API key validation.
  */
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+        viewModel.onLocationPermissionChanged(fineGranted || coarseGranted)
+    }
+
+    LaunchedEffect(Unit) {
+        val hasFine = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        val hasCoarse = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        viewModel.onLocationPermissionChanged(hasFine || hasCoarse)
+
+        val hasValidKey = try {
+            BuildConfig.MAPS_API_KEY.isNotBlank()
+        } catch (e: Exception) {
+            false
+        }
+        viewModel.onApiKeyStatusChanged(hasValidKey)
+    }
 
     HomeScreenContent(
         uiState = uiState,
+        onRequestPermission = {
+            permissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        },
+        onRecenterClick = viewModel::onRecenterMap,
+        onUserPanMap = viewModel::onUserPanMap,
         onSearchQueryChange = viewModel::onSearchQueryChanged,
         onSearchSubmit = viewModel::onSearchSubmitted,
         onClearSearch = viewModel::onClearSearch,
@@ -70,6 +117,9 @@ fun HomeScreen(
 @Composable
 fun HomeScreenContent(
     uiState: HomeUiState,
+    onRequestPermission: () -> Unit,
+    onRecenterClick: () -> Unit,
+    onUserPanMap: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onSearchSubmit: () -> Unit,
     onClearSearch: () -> Unit,
@@ -121,14 +171,22 @@ fun HomeScreenContent(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // B. Main Map Viewport Placeholder (occupies all remaining vertical space)
-                    MapPlaceholderView(
+                    // B. Main Automotive Map Viewport
+                    AutoNavMapView(
+                        currentLocation = uiState.lastKnownLocation,
+                        gpsStatus = uiState.systemStatus.gpsStatus,
+                        hasLocationPermission = uiState.hasLocationPermission,
+                        hasValidApiKey = uiState.hasValidApiKey,
+                        isFollowingVehicle = uiState.isFollowingVehicle,
+                        onRequestPermission = onRequestPermission,
+                        onRecenterClick = onRecenterClick,
+                        onUserPanMap = onUserPanMap,
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f)
                     )
 
-                    // D. Bottom System Telemetry Area
+                    // D. Bottom System Telemetry Area (GPS status, Vehicle Speed, Nav status, App status)
                     BottomStatusBar(
                         systemStatus = uiState.systemStatus,
                         isCompactLayout = isCompactWidth,
@@ -192,6 +250,9 @@ private fun HomeScreenStandardAutomotivePreview() {
     AutoNavTheme {
         HomeScreenContent(
             uiState = HomeUiState(),
+            onRequestPermission = {},
+            onRecenterClick = {},
+            onUserPanMap = {},
             onSearchQueryChange = {},
             onSearchSubmit = {},
             onClearSearch = {},
@@ -213,6 +274,9 @@ private fun HomeScreenCompactAutomotivePreview() {
     AutoNavTheme {
         HomeScreenContent(
             uiState = HomeUiState(),
+            onRequestPermission = {},
+            onRecenterClick = {},
+            onUserPanMap = {},
             onSearchQueryChange = {},
             onSearchSubmit = {},
             onClearSearch = {},
@@ -234,27 +298,9 @@ private fun HomeScreenUltraWideAutomotivePreview() {
     AutoNavTheme {
         HomeScreenContent(
             uiState = HomeUiState(),
-            onSearchQueryChange = {},
-            onSearchSubmit = {},
-            onClearSearch = {},
-            onDismissPendingNotice = {},
-            onOpenSettings = {},
-            onDismissSettings = {}
-        )
-    }
-}
-
-@Preview(
-    name = "Tablet Portrait Fallback (600x960)",
-    widthDp = 600,
-    heightDp = 960,
-    showBackground = true
-)
-@Composable
-private fun HomeScreenPortraitFallbackPreview() {
-    AutoNavTheme {
-        HomeScreenContent(
-            uiState = HomeUiState(),
+            onRequestPermission = {},
+            onRecenterClick = {},
+            onUserPanMap = {},
             onSearchQueryChange = {},
             onSearchSubmit = {},
             onClearSearch = {},

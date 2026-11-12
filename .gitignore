@@ -34,9 +34,10 @@ secrets.properties
 google-services.json
 *credentials*.json
 
-# IntelliJ IDEA / Android Studio
+# IntelliJ IDEA / Android Studio / VS Code
 *.iml
 .idea/
+.vscode/
 misc.xml
 deploymentTargetDropDown.xml
 render.experimental.xml

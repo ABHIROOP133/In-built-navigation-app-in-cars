@@ -15,13 +15,15 @@ This roadmap defines the engineering milestones, module dependencies, implementa
   - Report truthful Day 1 subsystem states (`GPS status: Not connected`, `Navigation status: Inactive`, `Application status: Ready`).
   - Write unit tests (`SystemStatusRepositoryTest`, `HomeViewModelTest`, `AutomotiveClockTest`) and Compose UI test (`HomeScreenTest`).
 
-### Milestone 2: GPS Location Telemetry & Map Viewport Integration (Day 2–3)
+### Milestone 2: GPS Location Telemetry & Map Viewport Integration (Day 2 — Completed)
 - **Scope**:
-  - Add runtime location permission handling (`ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`) in `com.autonav.location`.
-  - Implement `GpsLocationProvider` wrapping Android's location services to emit real-time latitude/longitude, bearing, satellite fix status, and ground speed (`km/h`).
-  - Integrate Google Maps SDK for Compose in `com.autonav.maps` using an API key injected safely from `local.properties` (never committed to Git).
-  - Replace `MapPlaceholderView` with the live dark-styled automotive map surface when the Maps API key and location permissions are present, while retaining a graceful fallback state if permissions are denied.
-  - Connect `GpsLocationProvider` to `SystemStatusRepository` so `GPS status` updates dynamically (`Not connected` -> `Searching` -> `Connected`).
+  - Add runtime location permission handling (`ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`) and network permissions in `AndroidManifest.xml`.
+  - Implement `GpsLocationClient` and `AndroidGpsLocationClient` in `com.autonav.location` wrapping Android's `LocationManager` and `GnssStatus` to emit real-time latitude/longitude, bearing, satellite fix status, and ground speed (`km/h`) without Play Services dependency.
+  - Integrate Google Maps Compose in `com.autonav.maps` using `AutomotiveMapTheme` with dark low-glare styling, vehicle orientation reticle, and re-center controls.
+  - Safe API key injection via `local.properties` (`MAPS_API_KEY`) into `manifestPlaceholders` and `BuildConfig.MAPS_API_KEY`.
+  - Replace `MapPlaceholderView` with `AutoNavMapView`, retaining a graceful fallback state when permissions or API keys are pending.
+  - Connect `GpsLocationClient` to `SystemStatusRepository` so `GPS status` updates dynamically (`Not connected` -> `Searching` -> `Connected`) and speedometer displays accurate ground speed.
+  - Unit tests covering `LocationFix` geometry, `SpeedFormatter`, repository updates, and ViewModel state transitions (21 tests passing).
 
 ### Milestone 3: Destination Search & Geocoding (Day 4)
 - **Scope**:

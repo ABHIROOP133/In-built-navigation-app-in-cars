@@ -74,21 +74,21 @@ To ensure reliability in an automotive environment where configuration changes, 
 
 ## 3. Package Responsibilities
 
-| Package | Current Files (Day 1) | Responsibility |
+| Package | Current Files | Responsibility |
 | :--- | :--- | :--- |
-| `com.autonav` | `MainActivity.kt` | Application activity entry point; configures edge-to-edge window insets and mounts `AutoNavTheme` + `HomeScreen`. |
-| `com.autonav.ui.screens` | `HomeScreen.kt` | Top-level screen layout coordinator; computes responsive breakpoints via `BoxWithConstraints` and orchestrates header, search, map viewport,bottom status bar, and dialogs. |
-| `com.autonav.ui.components` | `TopHeaderBar.kt`, `DestinationSearchBar.kt`, `MapPlaceholderView.kt`, `BottomStatusBar.kt` | Modular, self-contained automotive UI controls with minimum `48dp`–`56dp` touch targets and `testTag` hooks. |
+| `com.autonav` | `MainActivity.kt` | Application activity entry point; configures edge-to-edge window insets, connects hardware GNSS lifecycle, and mounts `AutoNavTheme` + `HomeScreen`. |
+| `com.autonav.ui.screens` | `HomeScreen.kt` | Top-level screen layout coordinator; computes responsive breakpoints via `BoxWithConstraints`, handles runtime location permission requests, and coordinates header, search, live map viewport, and telemetry bar. |
+| `com.autonav.ui.components` | `TopHeaderBar.kt`, `DestinationSearchBar.kt`, `MapPlaceholderView.kt`, `BottomStatusBar.kt` | Modular, self-contained automotive UI controls with minimum `48dp`–`56dp` touch targets, speedometer telemetry display, and `testTag` hooks. |
 | `com.autonav.ui.theme` | `Color.kt`, `Type.kt`, `Theme.kt` | Defines the low-glare dark charcoal color palette, high-contrast typography scale, and `AutoNavTheme`. |
-| `com.autonav.viewmodel` | `HomeUiState.kt`, `HomeViewModel.kt` | State holder and intent processor for the Home Screen. |
-| `com.autonav.data.model` | `SystemStatus.kt` | Domain enums and `SystemStatusSnapshot` representing truthful hardware/subsystem states. |
-| `com.autonav.data.repository` | `SystemStatusRepository.kt` | Repository interface and Day 1 implementation supplying `StateFlow<SystemStatusSnapshot>`. |
-| `com.autonav.data.local` | *(Reserved — Milestone 6)* | Local persistence (Room database / DataStore) for saved destinations and recent route history. |
-| `com.autonav.location` | *(Reserved — Milestone 2)* | Android `FusedLocationProviderClient` / `LocationManager` wrapper emitting real-time GPS coordinates, bearing, and vehicle speed. |
-| `com.autonav.maps` | *(Reserved — Milestone 2)* | Google Maps Compose wrapper, camera tracking modes (follow vehicle vs. free pan), and dark automotive map styling. |
+| `com.autonav.viewmodel` | `HomeUiState.kt`, `HomeViewModel.kt` | State holder and intent processor for the Home Screen, tracking permissions, vehicle follow state, and telemetry. |
+| `com.autonav.data.model` | `LocationFix.kt`, `SystemStatus.kt` | Domain models representing geographic coordinates, bearing, vehicle ground speed, and system status snapshots. |
+| `com.autonav.data.repository` | `SystemStatusRepository.kt` | Repository interface and implementation streaming GPS telemetry, satellite counts, and speed to the UI layer. |
+| `com.autonav.location` | `GpsLocationClient.kt`, `AndroidGpsLocationClient.kt` | Hardware GNSS sensor client interfacing with Android `LocationManager` and `GnssStatus` without Play Services dependency. |
+| `com.autonav.maps` | `AutomotiveMapTheme.kt`, `AutoNavMapView.kt` | Google Maps Compose viewport, dark automotive styling JSON, vehicle heading reticle, and camera follow/re-center controls. |
 | `com.autonav.navigation` | *(Reserved — Milestone 4)* | Route computation, polyline decoding, maneuver step progression, and off-route detection/rerouting engine. |
 | `com.autonav.voice` | *(Reserved — Milestone 5)* | Android `TextToSpeech` controller managing audio focus and spoken turn-by-turn instructions. |
-| `com.autonav.utils` | `AutomotiveClock.kt` | Pure formatting utilities for 24-hour cabin clock and date strings. |
+| `com.autonav.data.local` | *(Reserved — Milestone 6)* | Local persistence (Room database / DataStore) for saved destinations and recent route history. |
+| `com.autonav.utils` | `AutomotiveClock.kt`, `SpeedFormatter.kt` | Formatting utilities for 24-hour cabin clock, m/s-to-km/h speed conversions, and compass cardinal headings. |
 
 ---
 

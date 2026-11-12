@@ -55,34 +55,40 @@ AutoNav implements the **Model–View–ViewModel (MVVM)** pattern with Unidirec
 
 ```
 com.autonav
-├── MainActivity.kt                  # Edge-to-edge landscape activity entry point
+├── MainActivity.kt                  # Edge-to-edge landscape activity entry point & GNSS sensor lifecycle
 ├── ui
 │   ├── screens
-│   │   └── HomeScreen.kt            # Responsive automotive home screen & layout posture logic
+│   │   └── HomeScreen.kt            # Responsive automotive home screen, permission handshakes, and layout
 │   ├── components
 │   │   ├── TopHeaderBar.kt          # Branding, live clock/date, and Settings trigger
 │   │   ├── DestinationSearchBar.kt  # Touch-sized destination search field & milestone notice
-│   │   ├── MapPlaceholderView.kt    # Orthographic technical grid & pending map SDK notice
-│   │   └── BottomStatusBar.kt       # Truthful GPS, Navigation, and Application status strip
+│   │   ├── MapPlaceholderView.kt    # Fallback orthographic grid & technical notices
+│   │   └── BottomStatusBar.kt       # Truthful GPS status, vehicle speedometer, and nav status
 │   └── theme
 │       ├── Color.kt                 # Low-glare dark charcoal & steel-blue palette
 │       ├── Type.kt                  # High-legibility automotive typography scale
 │       └── Theme.kt                 # AutoNavTheme definition
 ├── viewmodel
-│   ├── HomeUiState.kt               # Immutable UI state snapshot
+│   ├── HomeUiState.kt               # Immutable UI state snapshot (telemetry, permissions, follow mode)
 │   └── HomeViewModel.kt             # User intent handler & StateFlow holder
 ├── data
 │   ├── model
+│   │   ├── LocationFix.kt           # WGS84 coordinates, bearing, accuracy, and speed
 │   │   └── SystemStatus.kt          # GpsConnectionStatus, NavigationStatus, ApplicationStatus
 │   ├── repository
-│   │   └── SystemStatusRepository.kt# System telemetry contract & Day 1 baseline implementation
+│   │   └── SystemStatusRepository.kt# Telemetry contract & live hardware status streams
 │   └── local                        # Reserved for Milestone 6 (Saved destinations)
-├── location                         # Reserved for Milestone 2 (GPS location & speed provider)
-├── maps                             # Reserved for Milestone 2 (Google Maps SDK controller)
+├── location
+│   ├── GpsLocationClient.kt         # Vehicle GNSS sensor client interface
+│   └── AndroidGpsLocationClient.kt  # Direct hardware LocationManager & GnssStatus provider
+├── maps
+│   ├── AutomotiveMapTheme.kt        # Low-glare dark automotive Google Maps styling JSON
+│   └── AutoNavMapView.kt            # Google Maps Compose viewport, car reticle & follow controls
 ├── navigation                       # Reserved for Milestone 4 (Routing & turn-by-turn engine)
 ├── voice                            # Reserved for Milestone 5 (TTS voice guidance)
 └── utils
-    └── AutomotiveClock.kt           # Deterministic header date & 24-hour clock formatter
+    ├── AutomotiveClock.kt           # Deterministic header date & 24-hour clock formatter
+    └── SpeedFormatter.kt            # Speed conversion (m/s to km/h) & compass bearings
 ```
 
 Detailed architectural diagrams and data-flow documentation are available in [`docs/architecture.md`](docs/architecture.md) and [`docs/development-roadmap.md`](docs/development-roadmap.md).
@@ -105,9 +111,10 @@ Detailed architectural diagrams and data-flow documentation are available in [`d
    ```
 
 2. **Configure local SDK path**:
-   Copy [`local.properties.example`](local.properties.example) to `local.properties` and set your Android SDK path:
+   Copy [`local.properties.example`](local.properties.example) to `local.properties` and set your Android SDK path and optional Google Maps API key:
    ```properties
    sdk.dir=C\:\\Users\\<username>\\AppData\\Local\\Android\\Sdk
+   MAPS_API_KEY=your_google_maps_api_key_here
    ```
    *(Never commit `local.properties` or API keys to version control.)*
 
@@ -126,15 +133,15 @@ Detailed architectural diagrams and data-flow documentation are available in [`d
 
 ---
 
-## 7. Current Development Status (Day 1 Milestone)
+## 7. Current Development Status (Milestone 2 Completed)
 
 | Subsystem / Component | Status | Notes |
 | :--- | :--- | :--- |
-| **Gradle & Version Catalog** | Completed | Kotlin `2.0.21`, AGP `8.7.3`, Compose BOM `2024.12.01` |
-| **MVVM Foundation (`data`, `viewmodel`, `ui`)** | Completed | `SystemStatusRepository`, `HomeViewModel`, `HomeUiState` |
-| **Automotive Home Screen (`HomeScreen.kt`)** | Completed | Landscape-first responsive UI with multi-viewport previews |
-| **System Telemetry Bar (`BottomStatusBar.kt`)** | Completed | Reports `GPS: Not connected`, `Navigation: Inactive`, `App: Ready` |
-| **Unit Test Suite (`app/src/test`)** | Completed | 9/9 unit tests passing for Repository, ViewModel, and Clock utilities |
-| **Google Maps SDK & GPS Tracking** | Pending | Scheduled for Milestone 2 |
-| **Destination Search & Geocoding** | Pending | UI input complete; backend geocoding scheduled for Milestone 3 |
+| **Gradle & Version Catalog** | Completed | Kotlin `2.0.21`, AGP `8.7.3`, Play Services Location `21.3.0`, Maps Compose `6.4.1` |
+| **MVVM Architecture (`data`, `viewmodel`, `ui`)** | Completed | `SystemStatusRepository`, `HomeViewModel`, `HomeUiState` |
+| **Hardware GPS Location Telemetry** | Completed | `AndroidGpsLocationClient` tracking GNSS fixes, bearing, and speed via `LocationManager` |
+| **Google Maps Viewport & Dark Styling** | Completed | `AutoNavMapView` with `AutomotiveMapTheme`, vehicle reticle, and re-center controls |
+| **Speedometer & System Telemetry** | Completed | Truthful telemetry reporting GPS status (with sat count), speed (`-- km/h` when disconnected) |
+| **Unit Test Suite (`app/src/test`)** | Completed | 21/21 unit tests passing across Models, Utilities, Repositories, and ViewModels |
+| **Destination Search & Geocoding** | Pending | UI input complete; geocoding scheduled for Milestone 3 |
 | **Turn-by-Turn & Voice Navigation** | Pending | Scheduled for Milestones 4 & 5 |
